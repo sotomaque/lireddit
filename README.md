@@ -1,6 +1,7 @@
 # LiReddit
 
-Work in progress
+- App requires you have a postgres DB up and running
+- App also requires you have a Redis server up and running
 
 ## Running Frontend
 
@@ -32,4 +33,11 @@ After you add quereies/ mutations to the graphql folder, run the following scrip
 ```bash
 > $ cd backend
 > $ yarn dev
+```
+
+- Creating migrations anytime there is a change to the schema
+
+```bash
+> $ cd backend
+> $ yarn create:migration
 ```
