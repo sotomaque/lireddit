@@ -1,4 +1,4 @@
-# LiReddit (https://github.com/sotomaque/lireddit)
+# LiReddit
 
 Work in progress
 
