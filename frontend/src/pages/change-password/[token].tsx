@@ -46,7 +46,6 @@ const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
               <Box>
                 <Box style={{ color: 'red' }}>{tokenError} 🚨 </Box>
                 <NextLink href="/forgot-password">
-
                   <Link>Forgot it again?</Link>
                 </NextLink>
               </Box>
