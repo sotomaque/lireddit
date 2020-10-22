@@ -8,7 +8,6 @@ import {
   Resolver,
 } from "type-graphql";
 import argon2 from "argon2";
-import { EntityManager } from "@mikro-orm/postgresql";
 
 import { User } from "../entitites/User";
 import { MyContext } from "src/types";
@@ -17,7 +16,6 @@ import { validateRegister } from "../utils/validateRegister";
 import { UsernamePasswordInput } from "./UsernamePasswordInput";
 import { sendEmail } from "../utils/sendEmail";
 import { v4 } from "uuid";
-import { getConnection } from "typeorm";
 
 @ObjectType()
 class FieldError {
@@ -66,20 +64,13 @@ export class UserResolver {
     const hashedPassword = await argon2.hash(options.password);
     let user;
     try {
-      const result = await getConnection()
-        .createQueryBuilder()
-        .insert()
-        .into(User)
-        .values({
-          username: options.username,
-          password: hashedPassword,
-          email: options.email,
-        })
-        .returning("*")
-        .execute();
-
-      console.log("res: ", result);
-      user = result.raw;
+      user = await User.create({
+        username: options.username,
+        password: hashedPassword,
+        email: options.email,
+      }).save();
+      // auto login user by storing userId session
+      req.session.userId = user.id;
     } catch (err) {
       if (err?.detail?.includes("already exists")) {
         // duplicate username error
@@ -93,9 +84,6 @@ export class UserResolver {
         };
       }
     }
-
-    // auto login user by storing userId session
-    req.session.userId = user.id;
 
     return { user };
   }

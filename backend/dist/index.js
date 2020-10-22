@@ -37,6 +37,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         synchronize: !constants_1.__prod__,
         entities: [Post_1.Post, User_1.User],
     });
+    console.log(conn);
     const app = express_1.default();
     const RedisStore = connect_redis_1.default(express_session_1.default);
     const redis = new ioredis_1.default();

@@ -34,10 +34,3 @@ After you add quereies/ mutations to the graphql folder, run the following scrip
 > $ cd backend
 > $ yarn dev
 ```
-
-- Creating migrations anytime there is a change to the schema
-
-```bash
-> $ cd backend
-> $ yarn create:migration
-```

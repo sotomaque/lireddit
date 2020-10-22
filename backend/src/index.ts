@@ -26,6 +26,7 @@ const main = async () => {
     synchronize: !__prod__,
     entities: [Post, User],
   });
+  console.log(conn);
 
   // create express server
   const app = express();
