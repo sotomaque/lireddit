@@ -11,11 +11,22 @@ import cors from "cors";
 import { COOKIE_NAME, __prod__ } from "./constants";
 import mikroOrmConfig from "./mikro-orm.config";
 
+import { createConnection } from "typeorm";
+
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
 
 const main = async () => {
+  const conn = createConnection({
+    type: "postgres",
+    database: "lireddit2",
+    username: "postgres",
+    password: "postgres",
+    logging: true,
+    synchronize: !__prod__,
+    entities: [],
+  });
   // connect to db
   const orm = await MikroORM.init(mikroOrmConfig);
   // run migrations (automatically runs when server restarts, running migrations)
