@@ -17,6 +17,7 @@ import { validateRegister } from "../utils/validateRegister";
 import { UsernamePasswordInput } from "./UsernamePasswordInput";
 import { sendEmail } from "../utils/sendEmail";
 import { v4 } from "uuid";
+import { getConnection } from "typeorm";
 
 @ObjectType()
 class FieldError {
@@ -40,22 +41,21 @@ class UserResponse {
 export class UserResolver {
   // me query
   @Query(() => User, { nullable: true })
-  async me(@Ctx() { req, em }: MyContext): Promise<User | null> {
+  me(@Ctx() { req }: MyContext) {
     // not logged in
     if (!req.session.userId) {
       return null;
     }
 
     // logged in
-    const user = await em.findOne(User, { id: req.session.userId });
-    return user;
+    return User.findOne(req.session.userId);
   }
 
   // register mutation
   @Mutation(() => UserResponse)
   async register(
     @Arg("options") options: UsernamePasswordInput,
-    @Ctx() { em, req }: MyContext
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
     const errors = validateRegister(options);
 
@@ -66,18 +66,20 @@ export class UserResolver {
     const hashedPassword = await argon2.hash(options.password);
     let user;
     try {
-      const result = await (em as EntityManager)
-        .createQueryBuilder(User)
-        .getKnexQuery()
-        .insert({
+      const result = await getConnection()
+        .createQueryBuilder()
+        .insert()
+        .into(User)
+        .values({
           username: options.username,
           password: hashedPassword,
           email: options.email,
-          created_at: new Date(),
-          updated_at: new Date(),
         })
-        .returning("*");
-      user = result[0];
+        .returning("*")
+        .execute();
+
+      console.log("res: ", result);
+      user = result.raw;
     } catch (err) {
       if (err?.detail?.includes("already exists")) {
         // duplicate username error
@@ -95,9 +97,7 @@ export class UserResolver {
     // auto login user by storing userId session
     req.session.userId = user.id;
 
-    return {
-      user,
-    };
+    return { user };
   }
 
   // login mutation
@@ -105,14 +105,13 @@ export class UserResolver {
   async login(
     @Arg("usernameOrEmail") usernameOrEmail: string,
     @Arg("password") password: string,
-    @Ctx() { em, req }: MyContext
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
     // lookup user
-    const user = await em.findOne(
-      User,
+    const user = await User.findOne(
       usernameOrEmail.includes("@")
-        ? { email: usernameOrEmail }
-        : { username: usernameOrEmail }
+        ? { where: { email: usernameOrEmail } }
+        : { where: { username: usernameOrEmail } }
     );
     // case: user not found
     if (!user) {
@@ -143,9 +142,7 @@ export class UserResolver {
     req.session.userId = user.id;
 
     // otherwise return user
-    return {
-      user,
-    };
+    return { user };
   }
 
   // logout mutation
@@ -171,9 +168,9 @@ export class UserResolver {
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg("email") email: string,
-    @Ctx() { em, redis }: MyContext
+    @Ctx() { redis }: MyContext
   ) {
-    const user = await em.findOne(User, { email });
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       // email not in db
       return true; // avoid giving user hint that email is not in db
@@ -201,7 +198,7 @@ export class UserResolver {
   async changePassword(
     @Arg("token") token: string,
     @Arg("newPassword") newPassword: string,
-    @Ctx() { em, redis, req }: MyContext
+    @Ctx() { redis, req }: MyContext
   ): Promise<UserResponse> {
     if (newPassword.length <= 2) {
       return {
@@ -228,7 +225,7 @@ export class UserResolver {
     }
 
     const userIdNum = parseInt(userId);
-    const user = await em.findOne(User, { id: userIdNum });
+    const user = await User.findOne(userIdNum);
 
     if (!user) {
       return {
@@ -241,8 +238,10 @@ export class UserResolver {
       };
     }
 
-    user.password = await argon2.hash(newPassword);
-
+    await User.update(
+      { id: userIdNum },
+      { password: await argon2.hash(newPassword) }
+    );
     await redis.del(key);
 
     // log in user after change password
