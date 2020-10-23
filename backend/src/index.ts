@@ -1,25 +1,38 @@
 import "reflect-metadata";
-import express from "express";
-import { MikroORM } from "@mikro-orm/core";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
-import Redis from "ioredis";
-import session from "express-session";
+import { createConnection } from "typeorm";
 import connectReddis from "connect-redis";
 import cors from "cors";
+import express from "express";
+import Redis from "ioredis";
+import session from "express-session";
 
 import { COOKIE_NAME, __prod__ } from "./constants";
-import mikroOrmConfig from "./mikro-orm.config";
-
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
+import { Post } from "./entitites/Post";
+import { User } from "./entitites/User";
+import path from "path";
 
+// rerun
 const main = async () => {
-  // connect to db
-  const orm = await MikroORM.init(mikroOrmConfig);
-  // run migrations (automatically runs when server restarts, running migrations)
-  await orm.getMigrator().up();
+  // connect to db using typeorm
+  const conn = await createConnection({
+    type: "postgres",
+    database: "lireddit2",
+    username: "postgres",
+    password: "postgres",
+    logging: true,
+    synchronize: !__prod__,
+    migrations: [path.join(__dirname, "./migrations/*")],
+    entities: [Post, User],
+  });
+  await conn.runMigrations();
+  // console.log(conn);
+
+  // Post.delete({});
 
   // create express server
   const app = express();
@@ -61,7 +74,7 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
-    context: ({ req, res }) => ({ em: orm.em, req, res, redis }),
+    context: ({ req, res }) => ({ req, res, redis }),
   });
 
   // apply middleware
@@ -72,7 +85,7 @@ const main = async () => {
 
   // listen to posrt 4000
   app.listen(4000, () => {
-    console.log("hello world");
+    console.log("listeneing on port 4000");
   });
 };
 
