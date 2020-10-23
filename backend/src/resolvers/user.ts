@@ -9,7 +9,7 @@ import {
 } from "type-graphql";
 import argon2 from "argon2";
 
-import { User } from "../entitites/User";
+import { User } from "../entities/User";
 import { MyContext } from "src/types";
 import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from "../constants";
 import { validateRegister } from "../utils/validateRegister";

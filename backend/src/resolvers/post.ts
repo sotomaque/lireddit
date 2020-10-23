@@ -15,7 +15,7 @@ import {
   UseMiddleware,
 } from "type-graphql";
 
-import { Post } from "../entitites/Post";
+import { Post } from "../entities/Post";
 import { getConnection } from "typeorm";
 
 @InputType()

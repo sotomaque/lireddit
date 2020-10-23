@@ -12,8 +12,8 @@ import { COOKIE_NAME, __prod__ } from "./constants";
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
-import { Post } from "./entitites/Post";
-import { User } from "./entitites/User";
+import { Post } from "./entities/Post";
+import { User } from "./entities/User";
 import path from "path";
 
 // rerun

@@ -24,7 +24,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PostResolver = void 0;
 const isAuth_1 = require("../middleware/isAuth");
 const type_graphql_1 = require("type-graphql");
-const Post_1 = require("../entitites/Post");
+const Post_1 = require("../entities/Post");
 const typeorm_1 = require("typeorm");
 let PostInput = class PostInput {
 };

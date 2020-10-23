@@ -25,8 +25,8 @@ const constants_1 = require("./constants");
 const hello_1 = require("./resolvers/hello");
 const post_1 = require("./resolvers/post");
 const user_1 = require("./resolvers/user");
-const Post_1 = require("./entitites/Post");
-const User_1 = require("./entitites/User");
+const Post_1 = require("./entities/Post");
+const User_1 = require("./entities/User");
 const path_1 = __importDefault(require("path"));
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const conn = yield typeorm_1.createConnection({
