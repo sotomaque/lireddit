@@ -27,17 +27,19 @@ const post_1 = require("./resolvers/post");
 const user_1 = require("./resolvers/user");
 const Post_1 = require("./entitites/Post");
 const User_1 = require("./entitites/User");
+const path_1 = __importDefault(require("path"));
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
-    const conn = typeorm_1.createConnection({
+    const conn = yield typeorm_1.createConnection({
         type: "postgres",
         database: "lireddit2",
         username: "postgres",
         password: "postgres",
         logging: true,
         synchronize: !constants_1.__prod__,
+        migrations: [path_1.default.join(__dirname, "./migrations/*")],
         entities: [Post_1.Post, User_1.User],
     });
-    console.log(conn);
+    yield conn.runMigrations();
     const app = express_1.default();
     const RedisStore = connect_redis_1.default(express_session_1.default);
     const redis = new ioredis_1.default();
@@ -73,7 +75,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         cors: false,
     });
     app.listen(4000, () => {
-        console.log("hello world");
+        console.log("listeneing on port 4000");
     });
 });
 main().catch((err) => {

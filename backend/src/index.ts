@@ -14,19 +14,25 @@ import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
 import { Post } from "./entitites/Post";
 import { User } from "./entitites/User";
+import path from "path";
 
+// rerun
 const main = async () => {
   // connect to db using typeorm
-  const conn = createConnection({
+  const conn = await createConnection({
     type: "postgres",
     database: "lireddit2",
     username: "postgres",
     password: "postgres",
     logging: true,
     synchronize: !__prod__,
+    migrations: [path.join(__dirname, "./migrations/*")],
     entities: [Post, User],
   });
-  console.log(conn);
+  await conn.runMigrations();
+  // console.log(conn);
+
+  // Post.delete({});
 
   // create express server
   const app = express();
@@ -79,7 +85,7 @@ const main = async () => {
 
   // listen to posrt 4000
   app.listen(4000, () => {
-    console.log("hello world");
+    console.log("listeneing on port 4000");
   });
 };
 
