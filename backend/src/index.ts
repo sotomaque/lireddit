@@ -14,6 +14,7 @@ import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
 import { Post } from "./entities/Post";
 import { User } from "./entities/User";
+import { Upvote } from "./entities/Upvote";
 import path from "path";
 
 // rerun
@@ -27,7 +28,7 @@ const main = async () => {
     logging: true,
     synchronize: !__prod__,
     migrations: [path.join(__dirname, "./migrations/*")],
-    entities: [Post, User],
+    entities: [Post, User, Upvote],
   });
   await conn.runMigrations();
   // console.log(conn);

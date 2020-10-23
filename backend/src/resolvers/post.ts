@@ -80,7 +80,6 @@ export class PostResolver {
       replacements
     );
 
-    console.log("posts: ", posts);
     return {
       posts: posts.slice(0, realLimit),
       hasMore: posts.length === realLimitPlusOne,
@@ -129,6 +128,33 @@ export class PostResolver {
   @Mutation(() => Boolean)
   async deletePost(@Arg("id") id: number): Promise<boolean> {
     await Post.delete(id);
+    return true;
+  }
+
+  // vote
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
+  async vote(
+    @Arg("postId", () => Int) postId: number,
+    @Arg("value", () => Int) value: number,
+    @Ctx() { req }: MyContext
+  ) {
+    const isUpvote = value !== -1;
+    const realValue = isUpvote ? 1 : -1;
+    const { userId } = req.session;
+
+    // update post with new count
+    await getConnection().query(
+      `
+      START TRANSACTION;
+      insert into upvote( "userId", "postId", value)
+      values (${userId}, ${postId}, ${realValue});
+      update post
+      set points = points + ${realValue}
+      where id = ${postId};
+      COMMIT;
+      `
+    );
     return true;
   }
 }

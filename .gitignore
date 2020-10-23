@@ -4,3 +4,9 @@ backend/node_modules
 backend/dist
 .DS_Store
 frontend/.next/static/chunks/webpack.js
+backend/dist/index.js
+backend/dist/index.js.map
+backend/dist/resolvers/post.js
+backend/dist/resolvers/post.js.map
+backend/dist/resolvers/user.js
+backend/dist/resolvers/user.js.map

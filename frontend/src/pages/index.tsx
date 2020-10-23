@@ -9,7 +9,7 @@ import { createUrqlClient } from "../utils/createUrqlClient";
 const Index = () => { 
 
   const [variables, setVariables] = React.useState({ 
-    limit: 33, 
+    limit: 15, 
     cursor: null as null | string 
   });
 
@@ -37,9 +37,10 @@ const Index = () => {
           <div>Loading...</div>
           ) : (
             <Stack spacing={8}>
-            {data!.posts.posts.map(({ title, textSnippet, id }) => (
+            {data!.posts.posts.map(({ title, textSnippet, id, creator }) => (
               <Box p={5} shadow="md" borderWidth="1px" key={id}>
-                <Heading fontSize="xl">{title}</Heading>
+                <Heading fontSize="xl">{title}</Heading> 
+                User: {creator.username}
                 <Text mt={4}>{textSnippet}</Text>
               </Box>
             ))}

@@ -2,10 +2,12 @@ import {
   Arg,
   Ctx,
   Field,
+  FieldResolver,
   Mutation,
   ObjectType,
   Query,
   Resolver,
+  Root,
 } from "type-graphql";
 import argon2 from "argon2";
 
@@ -37,6 +39,18 @@ class UserResponse {
 
 @Resolver(User)
 export class UserResolver {
+  // FieldResolver to prevent looking at other users emails
+  @FieldResolver(() => String)
+  email(@Root() user: User, @Ctx() { req }: MyContext) {
+    // looking at your own email
+    if (req.session.userId === user.id) {
+      return user.email;
+    } else {
+      // not looking at your own email
+      return "";
+    }
+  }
+
   // me query
   @Query(() => User, { nullable: true })
   me(@Ctx() { req }: MyContext) {
