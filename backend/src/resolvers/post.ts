@@ -17,6 +17,7 @@ import {
 
 import { Post } from "../entities/Post";
 import { getConnection } from "typeorm";
+import { Upvote } from "../entities/Upvote";
 
 @InputType()
 class PostInput {
@@ -48,7 +49,8 @@ export class PostResolver {
   @Query(() => PaginatedPosts)
   async posts(
     @Arg("limit", () => Int) limit: number,
-    @Arg("cursor", () => String, { nullable: true }) cursor: string | null
+    @Arg("cursor", () => String, { nullable: true }) cursor: string | null,
+    @Ctx() { req }: MyContext
   ): Promise<PaginatedPosts> {
     // 20 -> 21
     const realLimit = Math.min(50, limit);
@@ -56,8 +58,14 @@ export class PostResolver {
 
     const replacements: any[] = [realLimitPlusOne];
 
+    if (req.session.userId) {
+      replacements.push(req.session.userId);
+    }
+
+    let cursorIndex = 3;
     if (cursor) {
       replacements.push(new Date(parseInt(cursor)));
+      cursorIndex = replacements.length;
     }
 
     // sql join to fetch user associated with post
@@ -70,10 +78,15 @@ export class PostResolver {
           'email', u.email,
           'createdAt', u."createdAt",
           'updatedAt', u."updatedAt"
-        ) creator
+        ) creator,
+        ${
+          req.session.userId
+            ? '(select value from upvote where "userId" = $2 and "postId" = p.id) "voteStatus"'
+            : 'null as "voteStatus"'
+        }
         from post p
         inner join "public".user u on u.id = p."creatorId"
-        ${cursor ? `where p."createdAt" < $2` : ""}
+        ${cursor ? `where p."createdAt" < $${cursorIndex}` : ""}
         order by p."createdAt" DESC
         limit $1
       `,
@@ -143,18 +156,57 @@ export class PostResolver {
     const realValue = isUpvote ? 1 : -1;
     const { userId } = req.session;
 
-    // update post with new count
-    await getConnection().query(
-      `
-      START TRANSACTION;
-      insert into upvote( "userId", "postId", value)
-      values (${userId}, ${postId}, ${realValue});
-      update post
-      set points = points + ${realValue}
-      where id = ${postId};
-      COMMIT;
-      `
-    );
+    // check if user has already voted on post
+    const upvote = await Upvote.findOne({ where: { postId, userId } });
+
+    // user has voted on post before & they are changing vote
+    if (upvote && upvote.value !== realValue) {
+      await getConnection().transaction(async (tm) => {
+        // update Upvote table
+        await tm.query(
+          `
+        update upvote
+        set value = $1
+        where "postId" = $2 and "userId" = $3
+        `,
+          [realValue, postId, userId]
+        );
+
+        // update points on the post
+        await tm.query(
+          `
+          update post
+          set points = points + $1
+          where id = $2
+        `,
+          [2 * realValue, postId]
+        );
+      });
+    }
+    // user has never voted before
+    else if (!upvote) {
+      await getConnection().transaction(async (tm) => {
+        // insert upvote
+        await tm.query(
+          `
+        insert into upvote( "userId", "postId", value)
+        values ($1, $2, $3);
+        `,
+          [userId, postId, realValue]
+        );
+
+        // update post with new points
+        await tm.query(
+          `
+            update post
+            set points = points + $1
+            where id = $2
+          `,
+          [realValue, postId]
+        );
+      });
+    }
+
     return true;
   }
 }
